@@ -1,15 +1,17 @@
-import { createContext, useContext, useState, useEffect } from "react";
+// src/context/Auth.jsx
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useApi } from "./Api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const api = useApi();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
- const [isAuthenticated, setIsAuthenticated] = useState(false); 
-  // ✅ Safe JSON parser
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Safe JSON parser helper
   const safeParse = (data) => {
     try {
       return JSON.parse(data);
@@ -18,221 +20,112 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Load user from localStorage on app start
+  // Safe user & token initialization on app startup
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
 
-    const parsedUser = safeParse(savedUser);
-
-    if (parsedUser && token) {
-      setUser(parsedUser);
-      setIsAuthenticated(true); 
+    if (token && savedUser) {
+      const parsedUser = safeParse(savedUser);
+      if (parsedUser) {
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } else {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
+      }
     } else {
-      // Clean corrupted data
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
       setIsAuthenticated(false);
     }
-
     setLoading(false);
   }, []);
 
-  // ✅ Login
+  // Login handler
   const login = async (credentials) => {
     try {
-      const response = await api.post("/auth/login", credentials);
-      
-      // We check 'ok' because your backend sends it!
-      const { token, user, ok, message } = response.data; 
+      const response = await api.post("/api/auth/login", credentials);
+      const { token, user: userData, ok, message } = response.data;
 
-      if (ok) {
+      if ((ok || response.status === 200) && token && userData) {
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-        setUser(user);
-         setIsAuthenticated(true);
-        return { ok: true };
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+        return { ok: true, user: userData };
       } else {
-        return { ok: false, message: message || "Invalid Credentials" };
+        return { ok: false, message: message || "Invalid email or password" };
       }
     } catch (error) {
+      console.error("Login error:", error);
       return {
         ok: false,
-        message: error.response?.data?.message || "Server Error",
+        message: error.response?.data?.message || "Server error during login",
       };
     }
   };
-  //  Register
+
+  // Sign up / Register handler
   const register = async (userData) => {
     try {
-      const response = await api.post("/auth/register", userData);
-      console.log("API Response:",response);
-      // Check if backend returned a success flag or 200/201 status
+      const response = await api.post("/api/auth/signup", userData);
       if (response.status === 200 || response.status === 201) {
-        return { ok: true,data:response.data };
+        return { ok: true, data: response.data };
       }
-      return { ok: false, message: "Registration failed" };
+      return { ok: false, message: response.data?.message || "Registration failed" };
     } catch (error) {
-      // If backend sends a string like "Email already taken", this catches it
-      const errorMsg = typeof error.response?.data === 'string' 
-                       ? error.response.data 
-                       : error.response?.data?.message || "Registration failed";
-                       
+      const errorMsg =
+        typeof error.response?.data === "string"
+          ? error.response.data
+          : error.response?.data?.message || "Registration failed";
       return { ok: false, message: errorMsg };
     }
   };
 
-  //  Logout
-  const logout = () => {
+  // Logout handler
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
     setIsAuthenticated(false);
+  }, []);
+
+  // Fetch / Sync current user data from server
+  const getCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return { success: false, message: "No active session" };
+      }
+
+      const response = await api.get("/api/auth/me");
+      if (response.data?.success || response.status === 200) {
+        const userData = response.data.user || response.data;
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+        return { success: true, user: userData };
+      } else {
+        return { success: false, message: "Failed to fetch user data" };
+      }
+    } catch (error) {
+      console.error("Fetch current user error:", error);
+      if (error.response?.status === 401) {
+        logout();
+      }
+      return {
+        success: false,
+        message: error.response?.data?.message || "Server Error",
+      };
+    }
   };
 
-  //account releted api
+  // Update user in local state & localStorage
+  const updateUserState = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
 
-const checkBalance = async () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  console.log("no",user.accountNumber);
-  try {
-    
-
-     const response = await api.post("/account/balance",  {
-      accountNumber: user.accountNumber,
-   
-    }
-  );
-  console.log(response)
-    if(response.data.ok){
-       return { ok: true, message: response.data.message,balance:response.data.balance };
-    }else{
-      return {ok:false,message:response.data.message}
-    }
-    console.log(response);
-  } catch (err) {
-   console.log(err);
-     return { ok: false, message: "An error occurred while checking balance." };
-  }
-};
-//  Deposit Money
-const deposit = async (amount) => {
-  const currentUser = user || JSON.parse(localStorage.getItem("user"));
-  
-  if (!amount || amount <= 0) {
-    return { success: false, message: "Please enter a valid amount" };
-  }
-
-  try {
-    const response = await api.post("/account/deposit", {
-      accountNumber: currentUser.accountNumber,
-      amount: parseFloat(amount),
-    
-    });
-      console.log(response);
-    if (response.data.ok) {
-      console.log("Deposit success",response.data);
-      const updatedUser = { 
-        ...currentUser, 
-        balance: response.data.balance 
-      };
-      
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      return { ok: true, message: response.data.message };
-    } else {
-      return { ok: false, message: response.data.message };
-    }
-  } catch (err) {
-    console.log(err);
-     return { ok: false, message: "An error occurred while processing the deposit." };
-  }
-};
-//  Withdraw Money
-const withdraw = async (amount) => {
-  const currentUser = user || JSON.parse(localStorage.getItem("user"));
-  
-  console.log("witdraw clicked");
-
-  try {
-    const response = await api.post("/account/withdraw", {
-      accountNumber: currentUser.accountNumber,
-      amount: parseFloat(amount),
-    });
-     console.log("Withdraw success",response);
-
-    if (response.data.ok) {
-       
-      const updatedUser = { 
-        ...currentUser, 
-        balance: response.data.balance 
-      };
-      
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      return { ok: true, message: response.data.message };
-    } else {
-      return { ok: false, message: response.data.message };
-    }
-  } catch (err) {
-    console.log(err);
-    return { ok: false, message: "An error occurred while processing the withdrawal." };
-  }
-};
-// ✅ Transfer Money
-const transferMoney = async (targetAccountNumber, amount) => {
-  const currentUser = user || JSON.parse(localStorage.getItem("user"));
- 
-  // 1. Basic Validations
-  if (!targetAccountNumber || targetAccountNumber.trim() === "") {
-    console.log("Invalid target account number:",targetAccountNumber)
-    return { ok: false, message: "Please enter receiver's account number" };
-  }
-  if (targetAccountNumber === currentUser.accountNumber) {
-    console.log("Attempted self-transfer to acount:",targetAccountNumber)
-    return { ok: false, message: "You cannot transfer money to yourself!" };
-  }
-  if (!amount || amount <= 0) {
-    console.log("Invalid amount:",amount)
-    return { ok: false, message: "Please enter a valid amount" };
-  }
-  if (amount > currentUser.balance) {
-    console.log("Insufficient balance for transfer.Curr balance:",currentUser.balance);
-    return { ok: false, message: "Insufficient balance for this transfer" };
-  }
-
-  try {
-    const response = await api.post("/account/transfer", {
-      fromAccount: currentUser.accountNumber,
-      toAccount: targetAccountNumber,
-      amount: parseFloat(amount),
-      
-    });
-    console.log(response);
-    if (response.data.ok) {
-      console.log("Transfer success", response.data);
-      const updatedUser = { 
-        ...currentUser, 
-        balance: response.data.balance 
-      };
-      
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      return { ok: true, message: response.data.message };
-    } else {
-      return { ok: false, message: response.data.message };
-    }
-  } catch (err) {
-    console.log(err);
-    return {
-      ok: false,
-      message: err.response?.data?.message || "Transfer failed. Check account number and try again.",
-    };
-  }
-};
   return (
     <AuthContext.Provider
       value={{
@@ -241,11 +134,9 @@ const transferMoney = async (targetAccountNumber, amount) => {
         logout,
         register,
         loading,
-        checkBalance,
-        deposit,
-        withdraw,
-        transferMoney,
         isAuthenticated,
+        getCurrentUser,
+        updateUserState,
       }}
     >
       {!loading && children}
@@ -253,5 +144,10 @@ const transferMoney = async (targetAccountNumber, amount) => {
   );
 };
 
-// ✅ Custom hook
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

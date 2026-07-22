@@ -1,8 +1,11 @@
+// src/components/Footer.jsx
 import React from "react";
 import { 
-  FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaShieldAlt, 
-  FaLock, FaClock, FaCreditCard, FaGlobe, FaQuestionCircle,
-  FaFacebook, FaTwitter, FaLinkedin, FaInstagram
+  FaHeart, FaEnvelope, FaPhone, FaMapMarkerAlt, FaShieldAlt, 
+  FaLock, FaClock, FaBrain, FaGlobe, FaQuestionCircle,
+  FaFacebook, FaTwitter, FaLinkedin, FaInstagram,
+  FaHandsHelping, FaNewspaper, FaUserMd, FaLeaf,
+  FaYoutube, FaSpotify
 } from "react-icons/fa";
 import { SiSecurityscorecard } from "react-icons/si";
 
@@ -10,7 +13,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-auto">
+    <footer className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 text-white mt-auto">
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
@@ -19,23 +22,27 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-2 rounded-xl">
-                <FaBuilding className="text-white" size={28} />
+                <FaBrain className="text-white" size={28} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">EliteBank</h2>
-                <p className="text-xs text-blue-300">Since 2024</p>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  wellness<span className="text-blue-400">Portal</span>
+                </h2>
+                <p className="text-xs text-blue-300">Supporting Mental Health Since 2024</p>
               </div>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Redefining banking experience with cutting-edge technology, 
-              absolute security, and customer-first approach. Your trusted 
-              financial partner for life.
+              Empowering students with accessible mental health support, 
+              daily wellness tracking, and resources for a healthier mind. 
+              Your well-being is our priority.
             </p>
             <div className="flex space-x-3 pt-2">
               <SocialIcon icon={<FaFacebook />} href="#" />
               <SocialIcon icon={<FaTwitter />} href="#" />
               <SocialIcon icon={<FaLinkedin />} href="#" />
               <SocialIcon icon={<FaInstagram />} href="#" />
+              <SocialIcon icon={<FaYoutube />} href="#" />
+              <SocialIcon icon={<FaSpotify />} href="#" />
             </div>
           </div>
 
@@ -46,28 +53,28 @@ export default function Footer() {
               Quick Links
             </h3>
             <ul className="space-y-3">
-              <FooterLink href="#">About Us</FooterLink>
-              <FooterLink href="#">Services</FooterLink>
-              <FooterLink href="#">Loan Products</FooterLink>
-              <FooterLink href="#">Credit Cards</FooterLink>
-              <FooterLink href="#">Investment Plans</FooterLink>
-              <FooterLink href="#">Insurance</FooterLink>
+              <FooterLink href="/dashboard">Dashboard</FooterLink>
+              <FooterLink href="/submit-check">Daily Check-in</FooterLink>
+              <FooterLink href="/records">View Records</FooterLink>
+              <FooterLink href="/profile">My Profile</FooterLink>
+              <FooterLink href="/resources">Wellness Resources</FooterLink>
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support & Resources */}
           <div>
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <FaQuestionCircle className="mr-2" size={18} />
-              Support & Help
+              Support & Resources
             </h3>
             <ul className="space-y-3">
-              <FooterLink href="#">FAQ</FooterLink>
-              <FooterLink href="#">Customer Support</FooterLink>
-              <FooterLink href="#">Branch Locator</FooterLink>
-              <FooterLink href="#">ATM Locations</FooterLink>
-              <FooterLink href="#">Report Fraud</FooterLink>
-              <FooterLink href="#">Complaints</FooterLink>
+              <FooterLink href="/faq">FAQ</FooterLink>
+              <FooterLink href="/counseling">Counseling Services</FooterLink>
+              <FooterLink href="/crisis-support">Crisis Support</FooterLink>
+              <FooterLink href="/self-help">Self-Help Tools</FooterLink>
+              <FooterLink href="/community">Community Forum</FooterLink>
+              <FooterLink href="/contact">Contact Support</FooterLink>
             </ul>
           </div>
 
@@ -75,14 +82,15 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <FaMapMarkerAlt className="mr-2" size={18} />
-              Contact Us
+              Contact & Support
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <FaMapMarkerAlt size={18} className="text-blue-400 mt-1 flex-shrink-0" />
                 <p className="text-gray-300 text-sm">
-                  123 Banking Avenue, Financial District,<br />
-                  Dhaka - 1212, Bangladesh
+                  University Wellness Center<br />
+                  Student Services Building, Floor 3<br />
+                  Dhaka, Bangladesh
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -91,13 +99,13 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <FaEnvelope size={18} className="text-blue-400" />
-                <p className="text-gray-300 text-sm">support@elitebank.com</p>
+                <p className="text-gray-300 text-sm">wellness@university.edu</p>
               </div>
               <div className="flex items-center space-x-3">
                 <FaClock size={18} className="text-blue-400" />
                 <p className="text-gray-300 text-sm">
-                  24/7 Customer Support<br />
-                  Banking Hours: 9 AM - 5 PM (Mon-Fri)
+                  24/7 Crisis Support Available<br />
+                  Counseling Hours: 9 AM - 6 PM (Mon-Fri)
                 </p>
               </div>
             </div>
@@ -109,23 +117,23 @@ export default function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <TrustBadge 
               icon={<FaShieldAlt />}
-              title="100% Secure"
-              description="256-bit encryption"
+              title="100% Confidential"
+              description="Your privacy matters"
             />
             <TrustBadge 
               icon={<FaLock />}
-              title="FDIC Insured"
-              description="Up to $250,000"
+              title="Secure Storage"
+              description="Encrypted data"
             />
             <TrustBadge 
-              icon={<FaCreditCard />}
-              title="Zero Fraud Liability"
-              description="24/7 monitoring"
+              icon={<FaHandsHelping />}
+              title="Professional Support"
+              description="Licensed counselors"
             />
             <TrustBadge 
-              icon={<FaClock />}
-              title="Instant Support"
-              description="24/7 assistance"
+              icon={<FaLeaf />}
+              title="Holistic Wellness"
+              description="Mind & body health"
             />
           </div>
         </div>
@@ -133,20 +141,35 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-400 text-sm">
-              © {currentYear} EliteBank. All rights reserved.
+            <p className="text-gray-400 text-sm flex items-center">
+              <FaHeart className="text-pink-400 mr-2 animate-pulse" />
+              © {currentYear} wellnessPortal. All rights reserved.
             </p>
-            <div className="flex space-x-6">
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition">Cookie Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition">Sitemap</a>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+              <a href="/privacy" className="text-gray-400 hover:text-blue-400 text-sm transition">
+                Privacy Policy
+              </a>
+              <a href="/terms" className="text-gray-400 hover:text-blue-400 text-sm transition">
+                Terms of Service
+              </a>
+              <a href="/cookies" className="text-gray-400 hover:text-blue-400 text-sm transition">
+                Cookie Policy
+              </a>
+              <a href="/accessibility" className="text-gray-400 hover:text-blue-400 text-sm transition">
+                Accessibility
+              </a>
             </div>
           </div>
           <p className="text-center text-gray-500 text-xs mt-4">
-            EliteBank is a registered trademark. Banking services subject to approval.
-            This is a demo application for educational purposes.
+            This is a student mental health tracking system for educational purposes.
+            If you're in crisis, please contact your local crisis support hotline.
           </p>
+          <div className="mt-2 flex justify-center space-x-4">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-300 border border-blue-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 mr-1.5 animate-pulse"></span>
+              24/7 Crisis Support Available
+            </span>
+          </div>
         </div>
       </div>
     </footer>
@@ -158,9 +181,10 @@ function SocialIcon({ icon, href }) {
   return (
     <a 
       href={href}
-      className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-all duration-300 hover:scale-110"
+      className="p-2 bg-gray-700/50 rounded-lg hover:bg-blue-600 transition-all duration-300 hover:scale-110 hover:shadow-lg"
       target="_blank"
       rel="noopener noreferrer"
+      aria-label="Social media link"
     >
       {icon}
     </a>
@@ -185,12 +209,12 @@ function FooterLink({ href, children }) {
 // Trust Badge Component
 function TrustBadge({ icon, title, description }) {
   return (
-    <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-xl hover:bg-gray-800 transition">
-      <div className="text-blue-400">
+    <div className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition border border-gray-600/30">
+      <div className="text-blue-400 text-lg">
         {icon}
       </div>
       <div>
-        <p className="font-semibold text-sm">{title}</p>
+        <p className="font-semibold text-sm text-white">{title}</p>
         <p className="text-gray-400 text-xs">{description}</p>
       </div>
     </div>

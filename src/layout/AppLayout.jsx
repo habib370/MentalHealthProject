@@ -7,11 +7,9 @@ export default function AppLayout() {
   const {isAuthenticated}=useAuth();
   return (
     <>
-      {/* navbar */}
-      {/* explore menu */}
+      
      {isAuthenticated && <Navbar/>} 
-      <Outlet />  {/* 👈 pages appear here */}
-
+      <Outlet />  
     {isAuthenticated &&  <Footer/>}
     </>
   );

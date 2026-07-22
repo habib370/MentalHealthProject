@@ -1,14 +1,26 @@
+// src/components/Navbar.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/Auth";
-import { 
-  FaUniversity, FaSignOutAlt, FaUser, FaBars, FaTimes, 
-  FaWallet, FaChartLine, FaHistory, FaCog, FaBell, 
-  FaShieldAlt, FaCreditCard, FaHome, FaHandHoldingUsd
+import {
+  FaBrain,
+  FaSignOutAlt,
+  FaUser,
+  FaBars,
+  FaTimes,
+  FaHome,
+  FaClipboardCheck,
+  FaHistory,
+  FaHeart,
+  FaUserGraduate,
+  FaCalendarCheck,
+  FaChartLine,
+  FaShieldAlt,
+  FaRegSmile,
 } from "react-icons/fa";
 
 export const Navbar = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -21,43 +33,58 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-xl sticky top-0 z-50 border-b border-blue-800/30">
+    <nav className="bg-gradient-to-r from-[#1877F2] via-[#1a7ae8] to-[#1877F2] shadow-xl sticky top-0 z-50 border-b border-blue-400/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
-          
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-yellow-400 rounded-full blur-md opacity-50 group-hover:opacity-75 transition"></div>
-              <div className="relative bg-gradient-to-br from-yellow-400 to-yellow-600 p-2 rounded-xl shadow-lg">
-                <FaUniversity className="h-6 w-6 md:h-7 md:w-7 text-slate-900" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                Elite<span className="text-yellow-400">Bank</span>
-              </span>
-              <span className="text-[10px] md:text-xs text-blue-300 -mt-1">Premium Banking</span>
-            </div>
-          </Link>
+         <Link to="/home" className="flex items-center space-x-3 group">
+  {/* Modern Student Routine Logo Badge */}
+  <div className="relative">
+    {/* Soft glow hover effect */}
+    <div className="absolute inset-0 bg-white/30 rounded-2xl blur-md opacity-60 group-hover:opacity-100 transition duration-300"></div>
+    
+    {/* Main Icon Container */}
+    <div className="relative bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-2.5 rounded-2xl shadow-md border border-white/20 flex items-center justify-center">
+      <FaUserGraduate className="h-6 w-6 md:h-7 md:w-7 text-white transform group-hover:scale-110 transition duration-300" />
+      
+     
+    </div>
+  </div>
+
+  {/* Brand Name & Subtitle */}
+  <div className="flex flex-col">
+    <span className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center">
+      MindHaven
+    </span>
+    <span className="text-[10px] md:text-xs text-blue-100 -mt-1 font-medium tracking-wide">
+      Daily Activity & Routine Analytics
+    </span>
+  </div>
+</Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {isAuthenticated ? (
+            {user ? (
               <>
                 {/* Navigation Links */}
-                <NavLink to="/dashboard" icon={<FaHome />} label="Dashboard" />
-                <NavLink to="/transactions" icon={<FaHistory />} label="Transactions" />
-                <NavLink to="/cards" icon={<FaCreditCard />} label="Cards" />
-                
-                {/* Balance Card */}
-                <div className="ml-4 px-5 py-2 bg-gradient-to-r from-yellow-400/10 to-yellow-500/10 rounded-full border border-yellow-400/30 backdrop-blur-sm">
+                <NavLink to="/home" icon={<FaHome />} label="Home" />
+                <NavLink
+                  to="/check-in"
+                  icon={<FaClipboardCheck />}
+                  label="Check-in"
+                />
+                <NavLink to="/records" icon={<FaHistory />} label="Records" />
+
+                {/* Wellness Stats Card */}
+                <div className="ml-4 px-4 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-sm">
                   <div className="flex items-center space-x-2">
-                    <FaWallet className="h-4 w-4 text-yellow-400" />
+                    <FaHeart className="h-4 w-4 text-pink-300 animate-pulse" />
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-blue-300">Total Balance</span>
+                      <span className="text-[10px] text-blue-100">
+                        Today's Check-in
+                      </span>
                       <span className="text-sm font-bold text-white">
-                        ৳ {user?.balance?.toLocaleString()}
+                        Ready ✓
                       </span>
                     </div>
                   </div>
@@ -67,13 +94,17 @@ export const Navbar = () => {
                 <div className="relative ml-4">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-3 pl-4 border-l border-blue-700/50 hover:border-blue-500 transition"
+                    className="flex items-center space-x-3 pl-4 border-l border-white/20 hover:border-white/40 transition"
                   >
                     <div className="text-right">
-                      <p className="text-xs text-blue-300 leading-none">Welcome back,</p>
-                      <p className="text-sm font-semibold text-white">{user?.fullName?.split(' ')[0] || 'User'}</p>
+                      <p className="text-xs text-blue-100 leading-none">
+                        Welcome back,
+                      </p>
+                      <p className="text-sm font-semibold text-white">
+                        {user?.username?.split(" ")[0] || "Student"}
+                      </p>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-full shadow-lg ring-2 ring-yellow-400/50">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-full shadow-lg ring-2 ring-white/30">
                       <FaUser className="h-4 w-4 text-white" />
                     </div>
                   </button>
@@ -82,14 +113,45 @@ export const Navbar = () => {
                   {showUserMenu && (
                     <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in">
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-                        <p className="font-semibold text-gray-800">{user?.fullName}</p>
-                        <p className="text-xs text-gray-500 font-mono mt-1">{user?.accountNumber}</p>
+                        <p className="font-semibold text-gray-800">
+                          {user?.username || "Student"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {user?.email || "No email"}
+                        </p>
+                        <div className="mt-2 flex items-center space-x-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
+                            Active
+                          </span>
+                        </div>
                       </div>
                       <div className="p-2">
-                        <DropdownItem icon={<FaUser />} label="My Profile" onClick={() => navigate("/profile")} />
-                        <DropdownItem icon={<FaCog />} label="Settings" onClick={() => navigate("/settings")} />
-                        <DropdownItem icon={<FaShieldAlt />} label="Security" onClick={() => navigate("/security")} />
-                        <DropdownItem icon={<FaBell />} label="Notifications" onClick={() => navigate("/notifications")} />
+                        <DropdownItem
+                          icon={<FaUser />}
+                          label="My Profile"
+                          onClick={() => navigate("/profile")}
+                        />
+                        <DropdownItem
+                          icon={<FaChartLine />}
+                          label="Progress"
+                          onClick={() => navigate("/records")}
+                        />
+                        <DropdownItem
+                          icon={<FaCalendarCheck />}
+                          label="Daily Check-in"
+                          onClick={() => navigate("/submit-check")}
+                        />
+                        <DropdownItem
+                          icon={<FaShieldAlt />}
+                          label="Privacy"
+                          onClick={() => navigate("/privacy")}
+                        />
+                        <DropdownItem
+                          icon={<FaRegSmile />}
+                          label="Resources"
+                          onClick={() => navigate("/resources")}
+                        />
                         <div className="border-t my-2"></div>
                         <button
                           onClick={handleLogout}
@@ -105,14 +167,17 @@ export const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-blue-200 hover:text-white px-4 py-2 transition">
+                <Link
+                  to="/login"
+                  className="text-blue-100 hover:text-white px-4 py-2 transition"
+                >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 px-6 py-2 rounded-full font-semibold hover:from-yellow-500 hover:to-yellow-600 transition shadow-lg hover:shadow-xl"
+                  className="bg-white text-[#1877F2] px-6 py-2 rounded-full font-semibold hover:bg-blue-50 transition shadow-lg hover:shadow-xl"
                 >
-                  Open Account
+                  Get Started
                 </Link>
               </div>
             )}
@@ -130,39 +195,71 @@ export const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-gradient-to-b from-slate-800 to-slate-900 border-t border-blue-800/50 animate-slide-down">
+        <div className="md:hidden bg-gradient-to-b from-[#1877F2] to-[#1565c0] border-t border-white/10 animate-slide-down">
           <div className="p-4 space-y-3">
-            {isAuthenticated ? (
+            {user ? (
               <>
                 {/* Mobile User Info */}
-                <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-xl p-4 mb-4 border border-blue-700/30">
+                <div className="bg-white/10 rounded-xl p-4 mb-4 border border-white/20">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 p-2 rounded-full">
-                      <FaUser className="text-slate-900" />
+                    <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-2.5 rounded-full">
+                      <FaUser className="text-white" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold">{user?.fullName}</p>
-                      <p className="text-xs text-blue-300 font-mono">{user?.accountNumber}</p>
+                      <p className="text-white font-semibold">
+                        {user?.username || "Student"}
+                      </p>
+                      <p className="text-xs text-blue-200">
+                        {user?.email || "No email"}
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-blue-700/30">
+                  <div className="mt-3 pt-3 border-t border-white/20">
                     <div className="flex items-center justify-between">
-                      <span className="text-blue-300 text-sm">Balance</span>
-                      <span className="text-white font-bold text-lg">৳ {user?.balance?.toLocaleString()}</span>
+                      <span className="text-blue-200 text-sm">Status</span>
+                      <span className="text-white font-medium text-sm flex items-center">
+                        <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                        Active
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Mobile Navigation Links */}
-                <MobileNavLink to="/dashboard" icon={<FaHome />} label="Dashboard" onClick={() => setIsOpen(false)} />
-                <MobileNavLink to="/transactions" icon={<FaHistory />} label="Transactions" onClick={() => setIsOpen(false)} />
-                <MobileNavLink to="/cards" icon={<FaCreditCard />} label="Cards" onClick={() => setIsOpen(false)} />
-                <MobileNavLink to="/profile" icon={<FaUser />} label="Profile" onClick={() => setIsOpen(false)} />
-                <MobileNavLink to="/settings" icon={<FaCog />} label="Settings" onClick={() => setIsOpen(false)} />
-                
+                <MobileNavLink
+                  to="/dashboard"
+                  icon={<FaHome />}
+                  label="Home"
+                  onClick={() => setIsOpen(false)}
+                />
+                <MobileNavLink
+                  to="/submit-check"
+                  icon={<FaClipboardCheck />}
+                  label="Daily Check-in"
+                  onClick={() => setIsOpen(false)}
+                />
+                <MobileNavLink
+                  to="/records"
+                  icon={<FaHistory />}
+                  label="My Records"
+                  onClick={() => setIsOpen(false)}
+                />
+                <MobileNavLink
+                  to="/profile"
+                  icon={<FaUser />}
+                  label="Profile"
+                  onClick={() => setIsOpen(false)}
+                />
+                <MobileNavLink
+                  to="/resources"
+                  icon={<FaRegSmile />}
+                  label="Resources"
+                  onClick={() => setIsOpen(false)}
+                />
+
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-red-400 bg-red-400/10 rounded-xl hover:bg-red-400/20 transition"
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-red-300 bg-red-400/10 rounded-xl hover:bg-red-400/20 transition"
                 >
                   <FaSignOutAlt size={18} />
                   <span className="font-medium">Logout</span>
@@ -179,10 +276,10 @@ export const Navbar = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="block text-center bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-yellow-600 transition"
+                  className="block text-center bg-white text-[#1877F2] py-3 rounded-xl font-semibold hover:bg-blue-50 transition"
                   onClick={() => setIsOpen(false)}
                 >
-                  Open Account
+                  Get Started
                 </Link>
               </>
             )}
@@ -217,6 +314,18 @@ export const Navbar = () => {
         .animate-slide-down {
           animation: slide-down 0.3s ease-out;
         }
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.6;
+          }
+        }
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
       `}</style>
     </nav>
   );
@@ -227,7 +336,7 @@ function NavLink({ to, icon, label }) {
   return (
     <Link
       to={to}
-      className="flex items-center space-x-2 px-4 py-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition group"
+      className="flex items-center space-x-2 px-4 py-2 text-blue-100 hover:text-white hover:bg-white/10 rounded-lg transition group"
     >
       <span className="group-hover:scale-110 transition">{icon}</span>
       <span className="font-medium">{label}</span>
@@ -254,7 +363,7 @@ function MobileNavLink({ to, icon, label, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className="flex items-center space-x-3 px-4 py-3 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition"
+      className="flex items-center space-x-3 px-4 py-3 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl transition"
     >
       <span>{icon}</span>
       <span className="font-medium">{label}</span>

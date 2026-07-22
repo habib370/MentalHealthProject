@@ -1,467 +1,314 @@
-import React, { useState } from "react";
+// src/pages/Home.jsx
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/Auth";
-import { useToast } from "../context/Toast";
+import { useNavigate } from "react-router-dom";
+import { useMentalHealth } from "../hooks/useMentalHealth";
 import { 
-  FaWallet, FaArrowUp, FaArrowDown, FaPaperPlane, FaEye, FaEyeSlash,
-  FaCreditCard, FaHistory, FaShieldAlt, FaClock, FaCheckCircle, 
-  FaTimesCircle, FaChartLine, FaUniversity, FaGift, FaPercent
+  FaHeart, FaMoon, FaHistory, FaCalendarCheck, 
+  FaClipboardCheck, FaChartLine, FaBrain, FaFire, 
+  FaBook, FaArrowRight, FaUserGraduate, FaTv, 
+  FaExclamationTriangle, FaBell, FaFlask
 } from "react-icons/fa";
 
 export default function Home() {
-  const { user, checkBalance, deposit, withdraw, transferMoney } = useAuth();
-  const { showToast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { records, analytics, loading: apiLoading } = useMentalHealth();
+  const [recentCheckins, setRecentCheckins] = useState([]);
 
-  const [showBalance, setShowBalance] = useState(false);
-  const [activeAction, setActiveAction] = useState(null);
-  const [amount, setAmount] = useState("");
-  const [targetAccount, setTargetAccount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState([
-    { id: 1, type: "deposit", amount: 5000, date: "Jan 15, 2024", status: "completed", account: "Self" },
-    { id: 2, type: "withdraw", amount: 2000, date: "Jan 14, 2024", status: "completed", account: "Self" },
-    { id: 3, type: "transfer", amount: 1500, date: "Jan 13, 2024", status: "pending", account: "****1234" },
-  ]);
-
-  const handleAction = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    let res;
-    const numericAmount = parseFloat(amount);
-
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      showToast("Please enter a valid amount", "error");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      if (activeAction === "deposit") {
-        res = await deposit(numericAmount);
-      } else if (activeAction === "withdraw") {
-        if (numericAmount > user?.balance) {
-          showToast("Insufficient balance for withdrawal", "error");
-          setLoading(false);
-          return;
-        }
-        res = await withdraw(numericAmount);
-      } else if (activeAction === "transfer") {
-        if (!targetAccount) {
-          showToast("Please enter recipient account number", "error");
-          setLoading(false);
-          return;
-        }
-        if (numericAmount > user?.balance) {
-          showToast("Insufficient balance for transfer", "error");
-          setLoading(false);
-          return;
-        }
-        res = await transferMoney(targetAccount, numericAmount);
-      }
-
-      if (res?.ok) {
-        showToast("Transaction completed successfully", "success");
-        const newTransaction = {
-          id: Date.now(),
-          type: activeAction,
-          amount: numericAmount,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          status: "completed",
-          account: activeAction === "transfer" ? `****${targetAccount.slice(-4)}` : "Self"
+  // Safely convert and format backend API records
+  useEffect(() => {
+    if (records && Array.isArray(records) && records.length > 0) {
+      const formattedRecords = records.map((record) => {
+        const dateObj = new Date(record.submittedAt || record.createdAt || Date.now());
+        
+        return {
+          id: record._id || Math.random().toString(),
+          wellnessScore: typeof record.wellnessScore === "number" ? record.wellnessScore : 50,
+          sleepHours: record.sleepHours ?? 0,
+          academicFocus: record.academicFocusPercentage ?? 0,
+          labFocus: record.labFocusPercentage ?? 0,
+          screenTime: record.nonAcademicScreenTime || "1 – 2 hours",
+          socialQuality: record.socialInteractionQuality || "Neutral / Routine",
+          tomorrowCommitments: record.tomorrowPlan?.academicCommitments || ["None"],
+          date: dateObj.toLocaleDateString("en-US", { 
+            month: "short", 
+            day: "numeric", 
+            year: "numeric" 
+          }),
+          time: dateObj.toLocaleTimeString("en-US", { 
+            hour: "2-digit", 
+            minute: "2-digit" 
+          })
         };
-        setRecentTransactions([newTransaction, ...recentTransactions.slice(0, 4)]);
-        setAmount("");
-        setTargetAccount("");
-        setTimeout(() => {
-          setActiveAction(null);
-        }, 1500);
-      } else {
-        showToast(res?.message || "Something went wrong", "error");
-      }
-    } catch (err) {
-      console.log(err);
-      showToast("Unexpected error occurred", "error");
+      });
+      setRecentCheckins(formattedRecords);
+    } else {
+      setRecentCheckins([]);
     }
+  }, [records]);
 
-    setLoading(false);
-  };
-
-  const handleCheckBalance = async () => {
-    try {
-      showToast("Fetching your latest balance...");
-      await checkBalance();
-      setTimeout(() => {
-        showToast("Balance updated successfully!", "success");
-        setTimeout(() => showToast("", "success"), 3000);
-      }, 1000);
-    } catch {
-      showToast("Failed to fetch balance", "error");
-    }
-  };
-
-  if (!user) {
+  if (!user || apiLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-700 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
+          <p className="text-gray-600 font-medium text-lg">Loading your academic wellness dashboard...</p>
         </div>
       </div>
     );
   }
+
+  const latestRecord = recentCheckins[0];
+
+  // Derive display stats safely from backend analytics or fallback to current records
+  const totalLogsCount = analytics?.totalRecords ?? recentCheckins.length ?? 0;
+  const avgWellness = analytics?.averageWellness ?? (latestRecord ? latestRecord.wellnessScore : "N/A");
+  const latestSleep = analytics?.trends?.sleepHours?.last ?? latestRecord?.sleepHours ?? "N/A";
+  const latestFocus = latestRecord ? `${latestRecord.academicFocus}%` : "N/A";
+
+  // Check if user has active commitments tomorrow (filtering out "None")
+  const activeTomorrowCommitments = latestRecord?.tomorrowCommitments?.filter(c => c !== "None") || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-            Welcome back, <span className="text-blue-700">{user?.fullName?.split(' ')[0]}</span>
-          </h1>
-          <p className="text-gray-500 mt-1">Here's your financial overview</p>
+        <div className="mb-8 flex justify-between items-end flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              Welcome back, <span className="text-blue-700">{user?.username || user?.name || "Student"}</span> 👋
+            </h1>
+            <p className="text-gray-500 mt-1">Track your focus, balance study habits, and stay ahead of burnout.</p>
+          </div>
+          <div className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-gray-500 font-medium shadow-sm">
+            📅 {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+          </div>
         </div>
 
-        {/* Balance Card */}
-        <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 rounded-2xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden mb-8">
+        {/* Quick Check-in Card */}
+        <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 rounded-2xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden mb-8">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full transform translate-x-32 -translate-y-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-400 opacity-5 rounded-full transform -translate-x-24 translate-y-24"></div>
           
           <div className="relative z-10">
             <div className="flex justify-between items-start flex-wrap gap-4">
               <div>
-                <p className="text-blue-200 text-sm mb-2">Total Balance</p>
-                <div className="flex items-center space-x-3">
-                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                    ৳ {showBalance ? user?.balance?.toLocaleString() : "••••••"}
-                  </h2>
-                  <button
-                    onClick={() => setShowBalance(!showBalance)}
-                    className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition backdrop-blur-sm"
-                  >
-                    {showBalance ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-                  </button>
-                </div>
+                <p className="text-blue-200 text-sm mb-2 flex items-center font-medium">
+                  <FaHeart className="mr-2 text-pink-300 animate-pulse" />
+                  Daily Activity & Focus Check-in
+                </p>
+                <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+                  Have you logged today's progress?
+                </h2>
+                <p className="text-blue-200 mt-2 text-sm max-w-lg">
+                  Submit your daily sleep times, class focus minutes, and tomorrow's upcoming schedule to calculate your wellness score.
+                </p>
+                <button
+                  onClick={() => navigate("/check-in")}
+                  className="mt-5 px-8 py-3 bg-white text-blue-900 hover:bg-blue-50 rounded-xl font-bold shadow-lg transition flex items-center group cursor-pointer"
+                >
+                  Start Today's Log
+                  <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-                <FaCreditCard size={32} className="opacity-80" />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/20">
-              <div>
-                <p className="text-blue-200 text-xs">Account Number</p>
-                <p className="font-mono text-sm font-semibold">{user?.accountNumber}</p>
-              </div>
-              <div>
-                <p className="text-blue-200 text-xs">Account Type</p>
-                <p className="text-sm font-semibold">{user?.accountType || "Premium Savings"}</p>
-              </div>
+               <div className="relative">
+    {/* Soft glow hover effect */}
+    <div className="absolute inset-0 bg-white/30 rounded-2xl blur-md opacity-60 group-hover:opacity-100 transition duration-300"></div>
+    
+    {/* Main Icon Container */}
+    <div className="relative bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-2.5 rounded-2xl shadow-md border border-white/20 flex items-center justify-center">
+      <FaUserGraduate className="h-6 w-6 md:h-7 md:w-7 text-white transform group-hover:scale-110 transition duration-300" />
+      
+     
+    </div>
+  </div>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Tomorrow's Preparation Alert Banner */}
+        {activeTomorrowCommitments.length > 0 && (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl shadow-sm mb-8 flex items-start space-x-3">
+            <FaBell className="text-amber-600 mt-1 flex-shrink-0" size={18} />
+            <div>
+              <h4 className="text-sm font-bold text-amber-900">Upcoming Schedule Alert for Tomorrow</h4>
+              <p className="text-xs text-amber-800 mt-0.5">
+                You have scheduled commitments: <span className="font-semibold">{activeTomorrowCommitments.join(", ")}</span>. Make sure to prepare your study plan accordingly tonight!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            icon={<FaFire className="text-orange-500" />}
+            title="Total Logs"
+            value={totalLogsCount}
+            color="orange"
+          />
+          <StatCard
+            icon={<FaClipboardCheck className="text-blue-500" />}
+            title="Avg Wellness Score"
+            value={typeof avgWellness === "number" ? `${avgWellness}/100` : avgWellness}
+            color="blue"
+          />
+          <StatCard
+            icon={<FaMoon className="text-purple-500" />}
+            title="Recent Sleep"
+            value={typeof latestSleep === "number" ? `${latestSleep}h` : latestSleep}
+            color="purple"
+          />
+          <StatCard
+            icon={<FaUserGraduate className="text-emerald-500" />}
+            title="Academic Focus"
+            value={latestFocus}
+            color="green"
+          />
+        </div>
+
+        {/* Quick Action Navigation */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <ActionButton
-            icon={<FaWallet />}
-            title="Check Balance"
-            color="green"
-            onClick={handleCheckBalance}
+            icon={<FaHeart />}
+            title="Daily Check-in"
+            color="pink"
+            onClick={() => navigate("/check-in")}
           />
           <ActionButton
-            icon={<FaArrowDown />}
-            title="Deposit"
+            icon={<FaCalendarCheck />}
+            title="History Logs"
             color="blue"
-            onClick={() => setActiveAction("deposit")}
+            onClick={() => navigate("/records")}
           />
           <ActionButton
-            icon={<FaArrowUp />}
-            title="Withdraw"
-            color="orange"
-            onClick={() => setActiveAction("withdraw")}
-          />
-          <ActionButton
-            icon={<FaPaperPlane />}
-            title="Transfer"
-            color="purple"
-            onClick={() => setActiveAction("transfer")}
-          />
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <QuickStatCard
             icon={<FaChartLine />}
-            title="Monthly Spending"
-            amount="৳ 3,500"
-            change="-5%"
-            changeType="down"
-            color="red"
-          />
-          <QuickStatCard
-            icon={<FaUniversity />}
-            title="Total Deposits"
-            amount="৳ 5,000"
-            change="+12%"
-            changeType="up"
+            title="Analytics"
             color="green"
+            onClick={() => navigate("/records")}
           />
-          <QuickStatCard
-            icon={<FaGift />}
-            title="Rewards Points"
-            amount="2,450"
-            change="+50"
-            changeType="up"
-            color="yellow"
+          <ActionButton
+            icon={<FaBook />}
+            title="Resources"
+            color="purple"
+            onClick={() => navigate("/resources")}
           />
         </div>
 
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-4">
+        {/* Recent Check-ins List */}
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-gray-800 flex items-center">
-              <FaHistory className="mr-2 text-blue-600" size={20} />
-              Recent Transactions
+              <FaHistory className="mr-2 text-blue-600" size={18} />
+              Recent Activity Logs
             </h3>
-            <button className="text-blue-600 text-sm hover:text-blue-700 font-medium">
-              View All →
+            <button 
+              onClick={() => navigate("/records")}
+              className="text-blue-600 text-sm hover:text-blue-700 font-semibold flex items-center cursor-pointer"
+            >
+              View Full History →
             </button>
           </div>
           
           <div className="space-y-3">
-            {recentTransactions.map((tx) => (
-              <TransactionItem key={tx.id} transaction={tx} />
-            ))}
+            {recentCheckins.length > 0 ? (
+              recentCheckins.slice(0, 5).map((checkin) => (
+                <CheckinItem key={checkin.id} checkin={checkin} />
+              ))
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-gray-400 text-sm">No activity logs recorded yet</p>
+                <button
+                  onClick={() => navigate("/check-in")}
+                  className="mt-3 text-blue-600 hover:text-blue-700 font-semibold text-sm cursor-pointer"
+                >
+                  Submit your first check-in →
+                </button>
+              </div>
+            )}
           </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({ icon, title, value, color }) {
+  const colors = {
+    orange: "bg-orange-50 text-orange-700",
+    green: "bg-green-50 text-green-700",
+    purple: "bg-purple-50 text-purple-700",
+    blue: "bg-blue-50 text-blue-700"
+  };
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-400 text-xs font-semibold uppercase">{title}</p>
+          <p className="text-xl font-extrabold text-gray-800 mt-1">{value}</p>
+        </div>
+        <div className={`p-3 rounded-xl ${colors[color]}`}>
+          {icon}
         </div>
       </div>
-
-  
-
-      {/* Action Modal */}
-      {activeAction && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scale-in">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-gray-800 capitalize">
-                {activeAction} Money
-              </h3>
-              <button
-                onClick={() => {
-                  setActiveAction(null);
-                  setAmount("");
-                  setTargetAccount("");
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full transition"
-              >
-                <FaTimesCircle size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAction} className="space-y-4">
-              {activeAction === "transfer" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Recipient Account Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter account number"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={targetAccount}
-                    onChange={(e) => setTargetAccount(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount (৳)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Enter amount"
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                  min="1"
-                  step="100"
-                />
-              </div>
-
-              <div className="bg-blue-50 rounded-xl p-3">
-                <p className="text-sm text-blue-800 flex items-center">
-                  <FaShieldAlt className="mr-2" />
-                  Your transaction is secured with 256-bit encryption
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition disabled:opacity-50"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </span>
-                ) : (
-                  `Confirm ${activeAction}`
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-  
-
-      <style jsx>{`
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes scale-in {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 }
 
 // Action Button Component
 function ActionButton({ icon, title, color, onClick }) {
-  const colors = {
-    green: "from-green-500 to-green-600",
-    blue: "from-blue-500 to-blue-600",
-    orange: "from-orange-500 to-orange-600",
-    purple: "from-purple-500 to-purple-600"
+  const gradients = {
+    pink: "from-pink-500 to-rose-500",
+    blue: "from-blue-500 to-indigo-500",
+    green: "from-emerald-500 to-teal-500",
+    purple: "from-purple-500 to-violet-500"
   };
   
   const bgColors = {
-    green: "bg-green-50",
-    blue: "bg-blue-50",
-    orange: "bg-orange-50",
-    purple: "bg-purple-50"
-  };
-  
-  const textColors = {
-    green: "text-green-700",
-    blue: "text-blue-700",
-    orange: "text-orange-700",
-    purple: "text-purple-700"
+    pink: "bg-pink-50/60 hover:bg-pink-50",
+    blue: "bg-blue-50/60 hover:bg-blue-50",
+    green: "bg-emerald-50/60 hover:bg-emerald-50",
+    purple: "bg-purple-50/60 hover:bg-purple-50"
   };
 
   return (
     <button
       onClick={onClick}
-      className={`${bgColors[color]} p-4 md:p-6 rounded-2xl flex flex-col items-center space-y-2 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-lg group`}
+      className={`${bgColors[color]} p-4 rounded-2xl flex flex-col items-center space-y-2 transition-all duration-200 border border-gray-100 hover:shadow-md group cursor-pointer w-full`}
     >
-      <div className={`p-3 bg-gradient-to-r ${colors[color]} rounded-xl shadow-md group-hover:shadow-lg transition text-white`}>
+      <div className={`p-3 bg-gradient-to-r ${gradients[color]} rounded-xl shadow-md text-white group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <span className={`font-semibold text-sm md:text-base ${textColors[color]}`}>{title}</span>
+      <span className="font-bold text-xs md:text-sm text-gray-700">{title}</span>
     </button>
   );
 }
 
-// Quick Stat Card Component
-function QuickStatCard({ icon, title, amount, change, changeType, color }) {
-  const colors = {
-    red: "text-red-600 bg-red-50",
-    green: "text-green-600 bg-green-50",
-    yellow: "text-yellow-600 bg-yellow-50"
-  };
-
+// Checkin Item Component
+function CheckinItem({ checkin }) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${colors[color]}`}>
-          {icon}
-        </div>
-        <span className={`text-xs font-semibold ${
-          changeType === "up" ? "text-green-600" : "text-red-600"
-        }`}>
-          {change}
-        </span>
-      </div>
-      <p className="text-gray-500 text-sm">{title}</p>
-      <p className="text-xl font-bold text-gray-800 mt-1">{amount}</p>
-    </div>
-  );
-}
-
-// Transaction Item Component
-function TransactionItem({ transaction }) {
-  const getIcon = () => {
-    switch(transaction.type) {
-      case "deposit": return <FaArrowDown className="text-green-600" />;
-      case "withdraw": return <FaArrowUp className="text-red-600" />;
-      case "transfer": return <FaPaperPlane className="text-purple-600" />;
-      default: return <FaWallet className="text-gray-600" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch(transaction.status) {
-      case "completed": return "text-green-600 bg-green-50";
-      case "pending": return "text-yellow-600 bg-yellow-50";
-      default: return "text-gray-600 bg-gray-50";
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition">
-      <div className="flex items-center space-x-3">
-        <div className="p-2 bg-gray-100 rounded-full">
-          {getIcon()}
+    <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50/80 transition">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center font-extrabold text-blue-700 text-sm border border-blue-100 flex-shrink-0">
+          {checkin.wellnessScore}
         </div>
         <div>
-          <p className="font-semibold text-gray-800 capitalize">{transaction.type}</p>
-          <p className="text-xs text-gray-500">{transaction.date} • {transaction.account}</p>
+          <p className="font-bold text-gray-800 text-sm">
+            Wellness Score: {checkin.wellnessScore}/100
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {checkin.date} • Sleep: {checkin.sleepHours}h • Class Focus: {checkin.academicFocus}% • Screen: {checkin.screenTime}
+          </p>
         </div>
       </div>
-      <div className="text-right">
-        <p className={`font-bold ${
-          transaction.type === "deposit" ? "text-green-600" : "text-red-600"
-        }`}>
-          {transaction.type === "deposit" ? "+" : "-"} ৳ {transaction.amount.toLocaleString()}
-        </p>
-        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor()}`}>
-          {transaction.status}
+      
+      <div className="hidden sm:block text-right">
+        <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Logged
         </span>
       </div>
     </div>
